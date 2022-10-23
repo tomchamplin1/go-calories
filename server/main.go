@@ -1,38 +1,31 @@
-package routes
+package main
 
-import(
+import (
+	"os"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/tomchamplin1/go-calories/routes"
 )
 
-var entryCollection *mongo.Collection = OpenCollection(client, "calories")
-
-func AddEntry(c *gin.Context) {
-
-}
-
-func GetEntries(c *gin.Context) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-
-	var entries []bson.M 
-	cursor, err := entryCollection.Find(ctx, bson.M{})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServer, gin.H{"error": err.Error})
-		fmt.Println(err)
-		return
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
 	}
 
-	if err = cursor.All(ctx, &entries); err != nil {
-		c.JSON(http.StatusInternalServer, gin.H{"error": err.Error()})
-		fmt.Println(err)
-		return
-	}
-	defer cancel()
-	fmt.Println(entries)
-	c.JSON(http.StatusOK, entries)
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(cors.Default())
+
+	router.POST("/entry/create", routes.AddEntry)
+	router.GET("/entries", routes.GetEntries)
+	router.GET("/entry/:id/", routes.GetEntryById)
+	router.GET("/ingredient/:ingredient", routes.GetEntriesByIngredient)
+
+	router.PUT("/entry/update/:id", routes.UpdateEntry)
+	router.PUT("/ingredients/update/:id", routes.UpdateIngredient)
+	router.DELETE("/entry/delete/:id", routes.DeleteEntry)
+	router.Run(":" + port)
+
 }
-
-func GetEntriesByIngredient(c *gin.Context){
-
-}
-
